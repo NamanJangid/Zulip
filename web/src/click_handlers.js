@@ -472,7 +472,7 @@ export function initialize() {
     });
 
     // SIDEBARS
-    $("#user_presences")
+    $("#narrow-user-presences")
         .expectOne()
         .on("click", ".selectable_sidebar_block", (e) => {
             const $li = $(e.target).parents("li");
@@ -547,7 +547,7 @@ export function initialize() {
     }
 
     // BUDDY LIST TOOLTIPS (not displayed on touch devices)
-    $("#user_presences").on("mouseenter", ".selectable_sidebar_block", (e) => {
+    $("#narrow-user-presences").on("mouseenter", ".selectable_sidebar_block", (e) => {
         e.stopPropagation();
         const $elem = $(e.currentTarget).closest(".user_sidebar_entry").find(".user-presence-link");
         const user_id_string = $elem.attr("data-user-id");
@@ -555,7 +555,7 @@ export function initialize() {
 
         // `target_node` is the `ul` element since it stays in DOM even after updates.
         function get_target_node() {
-            return document.querySelector("#user_presences");
+            return document.querySelector("#narrow-user-presences");
         }
 
         function check_reference_removed(mutation, instance) {
@@ -623,7 +623,7 @@ export function initialize() {
     // MISC
 
     {
-        const sel = ["#stream_filters", "#left-sidebar-navigation-list", "#user_presences"].join(
+        const sel = ["#stream_filters", "#left-sidebar-navigation-list", "#narrow-user-presences"].join(
             ", ",
         );
 

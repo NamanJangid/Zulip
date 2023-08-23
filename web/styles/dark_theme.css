@@ -738,8 +738,8 @@
         }
     }
 
-    #user_presences li:hover,
-    #user_presences li.highlighted_user {
+    #narrow-user-presences li:hover,
+    #narrow-user-presences li.highlighted_user {
         background-color: hsl(136deg 25% 73% / 20%);
     }
 
