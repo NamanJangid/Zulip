@@ -4,6 +4,7 @@ const list_selectors = [
     "#stream_filters",
     "#left-sidebar-navigation-list",
     "#narrow-user-presences",
+    "#other-user-presences",
     "#send_later_options",
 ];
 

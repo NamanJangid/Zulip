@@ -26,7 +26,6 @@ export function show(opts) {
     // Hide selected elements in the left sidebar.
     opts.highlight_view_in_left_sidebar();
     stream_list.handle_message_view_deactivated();
-    pm_list.handle_message_view_deactivated();
 
     // Hide "middle-column" which has html for rendering
     // a messages narrow. We hide it and show the view.
@@ -42,6 +41,9 @@ export function show(opts) {
     compose_recipient.handle_middle_pane_transition();
     search.clear_search_form();
     opts.complete_rerender();
+
+    // This has to happen after resetting the current filter.
+    pm_list.handle_message_view_deactivated();
 
     // Misc.
     if (opts.is_recent_view) {

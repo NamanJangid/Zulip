@@ -738,11 +738,6 @@
         }
     }
 
-    #narrow-user-presences li:hover,
-    #narrow-user-presences li.highlighted_user {
-        background-color: hsl(136deg 25% 73% / 20%);
-    }
-
     .group-row.active,
     .stream-row.active,
     .emoji-picker-popover .emoji-showcase-container,

@@ -1,6 +1,7 @@
 import $ from "jquery";
 import _ from "lodash";
 
+import * as activity_ui from "./activity_ui";
 import * as pm_list_data from "./pm_list_data";
 import * as pm_list_dom from "./pm_list_dom";
 import * as resize from "./resize";
@@ -162,6 +163,9 @@ export function handle_narrow_activated(filter) {
         scroll_pm_into_view($active_filter_li);
         update_private_messages();
     }
+    if (activity_ui.user_filter) {
+        activity_ui.build_user_sidebar();
+    }
 }
 
 export function handle_message_view_deactivated() {
@@ -169,6 +173,9 @@ export function handle_message_view_deactivated() {
     // avoid disturbing the zoomed state here.
     unhighlight_all_private_messages_view();
     update_private_messages();
+    if (activity_ui.user_filter) {
+        activity_ui.build_user_sidebar();
+    }
 }
 
 export function is_private_messages_collapsed() {
