@@ -12,8 +12,9 @@ const $ = require("./lib/zjquery");
 const padded_widget = mock_esm("../src/padded_widget");
 const message_viewport = mock_esm("../src/message_viewport");
 
-const people = zrequire("people");
+const buddy_data = zrequire("buddy_data");
 const {BuddyList} = zrequire("buddy_list");
+const people = zrequire("people");
 
 function init_simulated_scrolling() {
     const elem = {
@@ -35,54 +36,54 @@ const alice = {
     full_name: "Alice Smith",
 };
 people.add_active_user(alice);
+const bob = {
+    email: "bob@zulip.com",
+    user_id: 15,
+    full_name: "Bob Smith",
+};
+people.add_active_user(bob);
+const $alice_li = $.create("alice-stub");
+const $bob_li = $.create("bob-stub");
 
 run_test("get_items", () => {
     const buddy_list = new BuddyList();
 
-    // We don't make $alice_li an actual jQuery stub,
-    // because our test only cares that it comes
-    // back from get_items.
-    const $alice_li = "alice stub";
-    const sel = "li.user_sidebar_entry";
-    const $container = $.create("get_items container", {
+    const $narrow_users_container = $.create("get_items #narrow-user-presences", {
         children: [{to_$: () => $alice_li}],
     });
-    buddy_list.$container.set_find_results(sel, $container);
+    const $other_users_container = $.create("get_items #other-user-presences", {
+        children: [{to_$: () => $bob_li}],
+    });
+    const sel = "li.user_sidebar_entry";
+    buddy_list.$narrow_users_container.set_find_results(sel, $narrow_users_container);
+    buddy_list.$other_users_container.set_find_results(sel, $other_users_container);
 
     const items = buddy_list.get_items();
-    assert.deepEqual(items, [$alice_li]);
+    assert.deepEqual(items, [$alice_li, $bob_li]);
 });
 
 run_test("basics", ({override}) => {
     const buddy_list = new BuddyList();
     init_simulated_scrolling();
 
-    override(buddy_list, "get_data_from_keys", (keys) => {
-        assert.deepEqual(keys, [alice.user_id]);
-        return "data-stub";
-    });
-
-    override(buddy_list, "items_to_html", (opts) => {
-        const items = opts.items;
-        assert.equal(items, "data-stub");
-        return "html-stub";
-    });
-
+    override(buddy_list, "items_to_html", () => "html-stub");
     override(message_viewport, "height", () => 550);
     override(padded_widget, "update_padding", () => {});
+    // Set to an empty list since we're not testing CSS.
+    $("#narrow-user-presences").children = () => [];
 
-    let appended;
+    let appended_to_narrow_users;
     $("#narrow-user-presences").append = (html) => {
         assert.equal(html, "html-stub");
-        appended = true;
+        appended_to_narrow_users = true;
     };
 
     buddy_list.populate({
         keys: [alice.user_id],
     });
-    assert.ok(appended);
+    assert.ok(appended_to_narrow_users);
 
-    const $alice_li = {length: 1};
+    const $alice_li = "alice-stub";
 
     override(buddy_list, "get_li_from_key", (opts) => {
         const key = opts.key;
@@ -95,6 +96,127 @@ run_test("basics", ({override}) => {
         key: alice.user_id,
     });
     assert.equal($li, $alice_li);
+});
+
+let narrow_users = [];
+function buddy_list_add_narrow_user(user_id, $stub) {
+    if ($stub.attr) {
+        $stub.attr("data-user-id", user_id);
+    }
+    $stub.length = 1;
+    narrow_users.push(user_id);
+    const sel = `li.user_sidebar_entry[data-user-id='${CSS.escape(user_id)}']`;
+    $("#narrow-user-presences").set_find_results(sel, $stub);
+    $("#other-user-presences").set_find_results(sel, []);
+}
+
+let other_users = [];
+function buddy_list_add_other_user(user_id, $stub) {
+    if ($stub.attr) {
+        $stub.attr("data-user-id", user_id);
+    }
+    $stub.length = 1;
+    other_users.push(user_id);
+    const sel = `li.user_sidebar_entry[data-user-id='${CSS.escape(user_id)}']`;
+    $("#other-user-presences").set_find_results(sel, $stub);
+    $("#narrow-user-presences").set_find_results(sel, []);
+}
+
+function override_user_matches_narrow(user_id) {
+    return narrow_users.includes(user_id);
+}
+
+function clear_buddy_list(buddy_list) {
+    buddy_list.populate({
+        keys: [],
+    });
+    narrow_users = [];
+    other_users = [];
+}
+
+run_test("split list", ({override, override_rewire}) => {
+    const buddy_list = new BuddyList();
+    init_simulated_scrolling();
+
+    override_rewire(buddy_data, "user_matches_narrow", override_user_matches_narrow);
+
+    override(buddy_list, "items_to_html", (opts) => {
+        if (opts.items.length > 0) {
+            return "html-stub";
+        }
+        return "empty";
+    });
+    override(message_viewport, "height", () => 550);
+    override(padded_widget, "update_padding", () => {});
+    // Set to an empty list since we're not testing CSS.
+    $("#narrow-user-presences").children = () => [];
+
+    let appended_to_narrow_users = false;
+    $("#narrow-user-presences").append = (html) => {
+        if (html === "html-stub") {
+            appended_to_narrow_users = true;
+        } else {
+            assert.equal(html, "empty");
+        }
+    };
+
+    let appended_to_other_users = false;
+    $("#other-user-presences").append = (html) => {
+        if (html === "html-stub") {
+            appended_to_other_users = true;
+        } else {
+            assert.equal(html, "empty");
+        }
+    };
+
+    // one narrow user
+    buddy_list_add_narrow_user(alice.user_id, $alice_li);
+    buddy_list.populate({
+        keys: [alice.user_id],
+    });
+    assert.ok(appended_to_narrow_users);
+    assert.ok(!appended_to_other_users);
+    appended_to_narrow_users = false;
+
+    // one other user
+    clear_buddy_list(buddy_list);
+    buddy_list_add_other_user(alice.user_id, $alice_li);
+    buddy_list.populate({
+        keys: [alice.user_id],
+    });
+    assert.ok(!appended_to_narrow_users);
+    assert.ok(appended_to_other_users);
+    appended_to_other_users = false;
+
+    // a narrow user and an other user
+    clear_buddy_list(buddy_list);
+    buddy_list_add_narrow_user(alice.user_id, $alice_li);
+    buddy_list_add_other_user(bob.user_id, $bob_li);
+    buddy_list.populate({
+        keys: [alice.user_id, bob.user_id],
+    });
+    assert.ok(appended_to_narrow_users);
+    assert.ok(appended_to_other_users);
+});
+
+run_test("find_li", ({override}) => {
+    const buddy_list = new BuddyList();
+
+    override(buddy_list, "fill_screen_with_content", () => {});
+
+    clear_buddy_list(buddy_list);
+    buddy_list_add_narrow_user(alice.user_id, $alice_li);
+    buddy_list_add_other_user(bob.user_id, $bob_li);
+
+    let $li = buddy_list.find_li({
+        key: alice.user_id,
+    });
+    assert.equal($li, $alice_li);
+
+    $li = buddy_list.find_li({
+        key: bob.user_id,
+    });
+    assert.equal($li, $bob_li);
 });
 
 run_test("big_list", ({override}) => {
@@ -162,14 +284,14 @@ run_test("find_li w/force_render", ({override}) => {
     // key is not already rendered in DOM, then the
     // widget will call show_key to force-render it.
     const key = "999";
-    const $stub_li = {length: 0};
+    const $stub_li = "stub-li";
 
     override(buddy_list, "get_li_from_key", (opts) => {
         assert.equal(opts.key, key);
         return $stub_li;
     });
 
-    buddy_list.keys = ["foo", "bar", key, "baz"];
+    buddy_list.all_user_ids = ["foo", "bar", key, "baz"];
 
     let shown;
 
@@ -178,10 +300,10 @@ run_test("find_li w/force_render", ({override}) => {
         shown = true;
     });
 
-    const $empty_li = buddy_list.find_li({
+    const $hidden_li = buddy_list.find_li({
         key,
     });
-    assert.equal($empty_li, $stub_li);
+    assert.equal($hidden_li, $stub_li);
     assert.ok(!shown);
 
     const $li = buddy_list.find_li({
@@ -195,7 +317,7 @@ run_test("find_li w/force_render", ({override}) => {
 
 run_test("find_li w/bad key", ({override}) => {
     const buddy_list = new BuddyList();
-    override(buddy_list, "get_li_from_key", () => ({length: 0}));
+    override(buddy_list, "get_li_from_key", () => "stub-li");
 
     const $undefined_li = buddy_list.find_li({
         key: "not-there",
@@ -207,21 +329,17 @@ run_test("find_li w/bad key", ({override}) => {
 
 run_test("scrolling", ({override}) => {
     const buddy_list = new BuddyList();
+    let tried_to_fill;
+    override(buddy_list, "fill_screen_with_content", () => {
+        tried_to_fill = true;
+    });
     init_simulated_scrolling();
-
-    override(message_viewport, "height", () => 550);
 
     buddy_list.populate({
         keys: [],
     });
-
-    let tried_to_fill;
-
-    override(buddy_list, "fill_screen_with_content", () => {
-        tried_to_fill = true;
-    });
-
-    assert.ok(!tried_to_fill);
+    assert.ok(tried_to_fill);
+    tried_to_fill = false;
 
     buddy_list.start_scroll_handler();
     $(buddy_list.scroll_container_sel).trigger("scroll");

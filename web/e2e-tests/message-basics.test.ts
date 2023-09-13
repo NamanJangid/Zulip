@@ -395,21 +395,21 @@ async function test_stream_search_filters_stream_list(page: Page): Promise<void>
 async function test_users_search(page: Page): Promise<void> {
     console.log("Search users using right sidebar");
     async function assert_in_list(page: Page, name: string): Promise<void> {
-        await page.waitForSelector(`#narrow-user-presences li [data-name="${CSS.escape(name)}"]`, {
+        await page.waitForSelector(`#other-user-presences li [data-name="${CSS.escape(name)}"]`, {
             visible: true,
         });
     }
 
     async function assert_selected(page: Page, name: string): Promise<void> {
         await page.waitForSelector(
-            `#narrow-user-presences li.highlighted_user [data-name="${CSS.escape(name)}"]`,
+            `#other-user-presences li.highlighted_user [data-name="${CSS.escape(name)}"]`,
             {visible: true},
         );
     }
 
     async function assert_not_selected(page: Page, name: string): Promise<void> {
         await page.waitForSelector(
-            `#narrow-user-presences li.highlighted_user [data-name="${CSS.escape(name)}"]`,
+            `#other-user-presences li.highlighted_user [data-name="${CSS.escape(name)}"]`,
             {hidden: true},
         );
     }
@@ -421,7 +421,7 @@ async function test_users_search(page: Page): Promise<void> {
 
     // Enter the search box and test selected suggestion navigation
     await page.click("#user_filter_icon");
-    await page.waitForSelector("#narrow-user-presences .highlighted_user", {visible: true});
+    await page.waitForSelector("#other-user-presences .highlighted_user", {visible: true});
     await assert_selected(page, "Desdemona");
     await assert_not_selected(page, "Cordelia, Lear's daughter");
     await assert_not_selected(page, "King Hamlet");
@@ -443,7 +443,7 @@ async function test_users_search(page: Page): Promise<void> {
     await arrow(page, "Down");
 
     // Now Iago must be highlighted
-    await page.waitForSelector('#narrow-user-presences li.highlighted_user [data-name="Iago"]', {
+    await page.waitForSelector('#other-user-presences li.highlighted_user [data-name="Iago"]', {
         visible: true,
     });
     await assert_not_selected(page, "King Hamlet");
