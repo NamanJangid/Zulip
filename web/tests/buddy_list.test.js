@@ -4,6 +4,12 @@ const {strict: assert} = require("assert");
 
 const _ = require("lodash");
 
+const {
+    clear_buddy_list,
+    override_user_matches_narrow,
+    buddy_list_add_narrow_user,
+    buddy_list_add_other_user,
+} = require("./lib/buddy_list");
 const {mock_esm, zrequire} = require("./lib/namespace");
 const {run_test} = require("./lib/test");
 const blueslip = require("./lib/zblueslip");
@@ -97,42 +103,6 @@ run_test("basics", ({override}) => {
     });
     assert.equal($li, $alice_li);
 });
-
-let narrow_users = [];
-function buddy_list_add_narrow_user(user_id, $stub) {
-    if ($stub.attr) {
-        $stub.attr("data-user-id", user_id);
-    }
-    $stub.length = 1;
-    narrow_users.push(user_id);
-    const sel = `li.user_sidebar_entry[data-user-id='${CSS.escape(user_id)}']`;
-    $("#narrow-user-presences").set_find_results(sel, $stub);
-    $("#other-user-presences").set_find_results(sel, []);
-}
-
-let other_users = [];
-function buddy_list_add_other_user(user_id, $stub) {
-    if ($stub.attr) {
-        $stub.attr("data-user-id", user_id);
-    }
-    $stub.length = 1;
-    other_users.push(user_id);
-    const sel = `li.user_sidebar_entry[data-user-id='${CSS.escape(user_id)}']`;
-    $("#other-user-presences").set_find_results(sel, $stub);
-    $("#narrow-user-presences").set_find_results(sel, []);
-}
-
-function override_user_matches_narrow(user_id) {
-    return narrow_users.includes(user_id);
-}
-
-function clear_buddy_list(buddy_list) {
-    buddy_list.populate({
-        keys: [],
-    });
-    narrow_users = [];
-    other_users = [];
-}
 
 run_test("split list", ({override, override_rewire}) => {
     const buddy_list = new BuddyList();
@@ -335,9 +305,7 @@ run_test("scrolling", ({override}) => {
     });
     init_simulated_scrolling();
 
-    buddy_list.populate({
-        keys: [],
-    });
+    clear_buddy_list(buddy_list);
     assert.ok(tried_to_fill);
     tried_to_fill = false;
 

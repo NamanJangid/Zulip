@@ -2,6 +2,12 @@
 
 const {strict: assert} = require("assert");
 
+const {
+    clear_buddy_list,
+    override_user_matches_narrow,
+    buddy_list_add_narrow_user,
+    buddy_list_add_other_user,
+} = require("./lib/buddy_list");
 const {mock_esm, set_global, with_overrides, zrequire} = require("./lib/namespace");
 const {run_test} = require("./lib/test");
 const blueslip = require("./lib/zblueslip");
@@ -94,42 +100,6 @@ people.initialize_current_user(me.user_id);
 const $alice_stub = $.create("alice stub");
 const $fred_stub = $.create("fred stub");
 
-let narrow_users = [];
-function buddy_list_add_narrow_user(user_id, $stub) {
-    if ($stub.attr) {
-        $stub.attr("data-user-id", user_id);
-    }
-    $stub.length = 1;
-    narrow_users.push(user_id);
-    const sel = `li.user_sidebar_entry[data-user-id='${CSS.escape(user_id)}']`;
-    $("#narrow-user-presences").set_find_results(sel, $stub);
-    $("#other-user-presences").set_find_results(sel, []);
-}
-
-let other_users = [];
-function buddy_list_add_other_user(user_id, $stub) {
-    if ($stub.attr) {
-        $stub.attr("data-user-id", user_id);
-    }
-    $stub.length = 1;
-    other_users.push(user_id);
-    const sel = `li.user_sidebar_entry[data-user-id='${CSS.escape(user_id)}']`;
-    $("#other-user-presences").set_find_results(sel, $stub);
-    $("#narrow-user-presences").set_find_results(sel, []);
-}
-
-function override_user_matches_narrow(user_id) {
-    return narrow_users.includes(user_id);
-}
-
-function clear_buddy_list() {
-    buddy_list.populate({
-        keys: [],
-    });
-    narrow_users = [];
-    other_users = [];
-}
-
 const rome_sub = {name: "Rome", subscribed: true, stream_id: 1001};
 function add_sub_and_set_as_current_narrow(sub) {
     stream_data.add_sub(sub);
@@ -160,7 +130,7 @@ function test(label, f) {
         presence.presence_info.set(zoe.user_id, {status: "active"});
         presence.presence_info.set(me.user_id, {status: "active"});
 
-        clear_buddy_list();
+        clear_buddy_list(buddy_list);
         muted_users.set_muted_users([]);
 
         activity.clear_for_testing();
@@ -434,7 +404,7 @@ test("first/prev/next", ({override, override_rewire, mock_template}) => {
     blueslip.reset();
 
     // one narrow user
-    clear_buddy_list();
+    clear_buddy_list(buddy_list);
     buddy_list_add_narrow_user(alice.user_id, $alice_stub);
     buddy_list.populate({
         keys: [alice.user_id],
@@ -444,7 +414,7 @@ test("first/prev/next", ({override, override_rewire, mock_template}) => {
     assert.equal(buddy_list.next_key(alice.user_id), undefined);
 
     // two narrow users
-    clear_buddy_list();
+    clear_buddy_list(buddy_list);
     buddy_list_add_narrow_user(alice.user_id, $alice_stub);
     buddy_list_add_narrow_user(fred.user_id, $fred_stub);
     buddy_list.populate({
@@ -457,7 +427,7 @@ test("first/prev/next", ({override, override_rewire, mock_template}) => {
     assert.equal(buddy_list.next_key(fred.user_id), undefined);
 
     // one other user
-    clear_buddy_list();
+    clear_buddy_list(buddy_list);
     buddy_list_add_other_user(fred.user_id, $fred_stub);
     buddy_list.populate({
         keys: [fred.user_id],
@@ -467,7 +437,7 @@ test("first/prev/next", ({override, override_rewire, mock_template}) => {
     assert.equal(buddy_list.next_key(fred.user_id), undefined);
 
     // two other users
-    clear_buddy_list();
+    clear_buddy_list(buddy_list);
     buddy_list_add_other_user(alice.user_id, $alice_stub);
     buddy_list_add_other_user(fred.user_id, $fred_stub);
     buddy_list.populate({
@@ -480,7 +450,7 @@ test("first/prev/next", ({override, override_rewire, mock_template}) => {
     assert.equal(buddy_list.next_key(fred.user_id), undefined);
 
     // one narrow user and one other user
-    clear_buddy_list();
+    clear_buddy_list(buddy_list);
     buddy_list_add_narrow_user(alice.user_id, $alice_stub);
     buddy_list_add_other_user(alice.user_id, $fred_stub);
     buddy_list.populate({
@@ -557,7 +527,7 @@ test("insert_one_user_into_empty_list", ({override, mock_template}) => {
     assert.ok(narrow_appended_html.indexOf('data-user-id="1"') > 0);
     assert.ok(narrow_appended_html.indexOf("user_circle_green") > 0);
 
-    clear_buddy_list();
+    clear_buddy_list(buddy_list);
     buddy_list_add_other_user(alice.user_id, $alice_stub);
     peer_data.set_subscribers(rome_sub.stream_id, []);
     activity_ui.redraw_user(alice.user_id);
@@ -766,7 +736,7 @@ test("initialize", ({override}) => {
         buddy_list.$narrow_users_container.append = () => {};
         buddy_list.$other_users_container = $("#other-user-presences");
         buddy_list.$other_users_container.append = () => {};
-        clear_buddy_list();
+        clear_buddy_list(buddy_list);
         page_params.presences = {};
     }
 
