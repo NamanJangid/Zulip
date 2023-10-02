@@ -214,7 +214,7 @@ function initialize_right_sidebar() {
             !is_collapsed,
         );
         $("#narrow-users-presence-container .toggle-narrow-users").toggleClass(
-            "fa-caret-right",
+            "fa-caret-left",
             is_collapsed,
         );
     });
@@ -227,7 +227,7 @@ function initialize_right_sidebar() {
             !is_collapsed,
         );
         $("#other-users-presence-container .toggle-other-users").toggleClass(
-            "fa-caret-right",
+            "fa-caret-left",
             is_collapsed,
         );
     });
