@@ -28,26 +28,6 @@ kbd {
     user-select: none;
 }
 
-@media (width < $mc_min) {
-    .hide-mc {
-        display: none !important;
-    }
-
-    .show-mc {
-        display: block !important;
-    }
-}
-
-@media (width < $md_min) {
-    .hide-md {
-        display: none !important;
-    }
-
-    .show-md {
-        display: flex !important;
-    }
-}
-
 @media (width < $sm_min) {
     .hide-sm {
         display: none !important;
@@ -73,6 +53,16 @@ kbd {
     }
 }
 
+@media (width < $cb_min) {
+    .hide-cb {
+        display: none !important;
+    }
+
+    .show-cb {
+        display: block !important;
+    }
+}
+
 @media (width < $xl_min) {
     .hide-xl {
         display: none !important;
@@ -80,6 +70,20 @@ kbd {
 
     .show-xl {
         display: block !important;
+    }
+
+    .show-xl-flex {
+        display: flex !important;
+    }
+}
+
+@media (width < $bc_min) {
+    .hide-bc {
+        display: none !important;
+    }
+
+    .show-bc {
+        display: flex !important;
     }
 }
 

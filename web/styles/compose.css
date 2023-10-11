@@ -919,7 +919,7 @@ textarea.new_message_textarea,
         }
     }
 
-    .hide-sm,
+    .hide-bc,
     .hide-lg {
         display: flex;
         align-items: center;
